@@ -1,0 +1,18 @@
+# Ignore local datasets
+dataset/
+data/
+Self-Driving-Car-3
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Ignore PyTorch model weights
+*.pth
+*.pt
+
+# Ignore OS-specific files
+.DS_Store
