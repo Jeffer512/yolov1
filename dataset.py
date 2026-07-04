@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 import torch
 import torchvision.transforms as T
 from torch.utils.data import Dataset
@@ -8,7 +7,6 @@ from config import S, B, C, IMAGE_SIZE
   
 class YOLOv1Dataset(Dataset):
     def __init__(self, data_dir, split, normalize=True, augment=True):
-        # Using pathlib for cross-platform path resolution
         self.img_dir = os.path.join(data_dir, split, "images")
         self.label_dir = os.path.join(data_dir, split, "labels")
         self.S = S
@@ -17,11 +15,12 @@ class YOLOv1Dataset(Dataset):
         self.normalize = normalize
         self.augment = augment
 
-        # Safety: Filter specifically for image extensions to prevent crashes
+        # Filter specifically for image extensions to prevent crashes
         img_extensions = {".jpg", ".jpeg", ".png", ".jpg", ".jpeg", ".png"}
+
         self.img_files = [
-            str(file) for file in self.img_dir.iterdir() 
-            if file.is_file() and file.suffix.lower() in img_extensions
+            os.path.join(self.img_dir, file) for file in os.listdir(self.img_dir)
+            if os.path.splitext(file)[1].lower() in img_extensions
         ]
 
         self.img_files.sort()
@@ -33,12 +32,11 @@ class YOLOv1Dataset(Dataset):
         img_path = self.img_files[idx]
         image = Image.open(img_path).convert("RGB")
 
-        # Using pathlib for cleaner extension splitting
-        label_filename = Path(img_path).stem + ".txt"
-        label_path = self.label_dir / label_filename
+        label_filename = os.path.splitext(os.path.basename(img_path))[0] + ".txt"
+        label_path = os.path.join(self.label_dir, label_filename)
 
         boxes = []
-        if label_path.exists():
+        if os.path.exists(label_path):
             with open(label_path, "r") as f:
                 for line in f.readlines():
                     class_id, x, y, w, h = map(float, line.split())
