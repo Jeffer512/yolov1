@@ -1,6 +1,5 @@
 import os
 import argparse
-import yaml
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -13,12 +12,7 @@ from config import (
 from dataset import YOLOv1Dataset
 from model import YOLOv1
 from loss import YOLOv1Loss
-
-
-def load_data_yaml(data_yaml_path):
-    with open(data_yaml_path, "r") as f:
-        data = yaml.safe_load(f)
-    return data
+from utils import load_class_names
 
 
 def save_checkpoint(state, filename):
@@ -73,9 +67,10 @@ def main(args):
 
     # Load class names
     data_yaml_path = os.path.join(DATASET_ROOT, "data.yaml")
-    data_info = load_data_yaml(data_yaml_path)
-    num_classes = len(data_info.get("names", []))
-    print(f"Classes ({num_classes}): {data_info['names']}")
+
+    class_names = load_class_names(data_yaml_path)
+    num_classes = len(class_names)
+    print(f"Classes ({num_classes}): {class_names}")
 
     if num_classes != C:
         print(f"Warning: config has C={C} but dataset has {num_classes} classes")

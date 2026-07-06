@@ -3,6 +3,26 @@ import torch
 from config import S, CONF_THRESHOLD, NMS_IOU_THRESH
 
 
+def load_class_names(data_yaml_path):
+    """Loads class name strings from the dataset YAML configuration file."""
+    import yaml
+    with open(data_yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    return data.get("names", [])
+
+
+def scale_box(detections, height, width):
+    """Scales a single normalized bounding box [x1, y1, x2, y2] to pixel values."""
+    x1, y1, x2, y2 = bbox
+    return [
+        x1 * width,
+        y1 * height,
+        x2 * width,
+        y2 * height,
+    ]
+    return detections
+
+
 def decode_predictions(pred_tensor, conf_threshold=CONF_THRESHOLD):
     """Converts model grid predictions (batch, channels, S, S) into bounding boxes.
     
@@ -138,7 +158,16 @@ def non_max_suppression(detections, iou_threshold=NMS_IOU_THRESH):
 
 
 def plot_predictions(image_tensor, detections, class_names, ax=None):
-    """Plots bounding box predictions onto the image tensor (3, h, w)."""
+    """Plots bounding box predictions onto the image tensor (3, h, w).
+
+    Args:
+        image_tensor (Tensor): Image tensor (c, h, w).
+        detections (list): Decoded and NMS-filtered detection dictionaries.
+        class_names (list): List of class name strings.
+
+    Returns:
+        PIL.Image: The processed image with drawn bounding boxes and text.
+    """
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
     import numpy as np
@@ -152,17 +181,14 @@ def plot_predictions(image_tensor, detections, class_names, ax=None):
     img = image_tensor.cpu() * std + mean
     img = torch.clamp(img, 0, 1).permute(1, 2, 0).numpy()
     ax.imshow(img)
-
+    
+    # Get image dimensions in pixels
+    img_h, img_w, _ = img.shape
     colors = plt.cm.tab10(np.linspace(0, 1, len(class_names)))
 
     for det in detections:
-        x1, y1, x2, y2 = det["bbox"]
-
-        # Map normalized boundaries back to absolute pixel values
-        x1 = x1 * img_w
-        y1 = y1 * img_h
-        x2 = x2 * img_w
-        y2 = y2 * img_h
+        # Scale coordinates in [0,1] range to pixel values
+        x1, y1, x2, y2 = scale_box(det["bbox"], img_h, img_w)
 
         class_id = det["class_id"]
         conf = det["confidence"]
