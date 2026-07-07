@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from config import S, LAMBDA_COORD, LAMBDA_NOOBJ
-from utils import iou_vectorized
+from yolov1.utils import iou_vectorized
 
 
 class YOLOv1Loss(nn.Module):

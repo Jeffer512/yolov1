@@ -10,9 +10,9 @@ from config import (
     S, B, C, IMAGE_SIZE, LR, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT,
 )
 from dataset import YOLOv1Dataset
-from model import YOLOv1
-from loss import YOLOv1Loss
-from utils import load_class_names
+from yolov1.model import YOLOv1
+from yolov1.loss import YOLOv1Loss
+from yolov1.utils import load_class_names
 
 
 def save_checkpoint(state, filename):
@@ -125,10 +125,10 @@ def main(args):
 
         # Log metrics to TensorBoard
         writer.add_scalar("Loss/train", train_loss, epoch)
-        writer.add_scalar("Loss/val", val_loss, epoch)
+        writer.add_scalar("Loss/val", valid_loss, epoch)
         writer.add_scalar("LR", optimizer.param_groups[0]["lr"], epoch)
 
-        print(f"Epoch {epoch:2d}/{EPOCHS}  |  Train Loss: {train_loss:.4f}  |  Val Loss: {val_loss:.4f}  |  LR: {optimizer.param_groups[0]['lr']:.6f}")
+        print(f"Epoch {epoch:2d}/{EPOCHS}  |  Train Loss: {train_loss:.4f}  |  Val Loss: {valid_loss:.4f}  |  LR: {optimizer.param_groups[0]['lr']:.6f}")
 
         # Save latest checkpoint state for recovery
         checkpoint_state = {
@@ -136,7 +136,7 @@ def main(args):
             "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
             "train_loss": train_loss,
-            "val_loss": val_loss,
+            "valid_loss": valid_loss,
             "best_valid_loss": best_valid_loss,
         }
         save_checkpoint(checkpoint_state, "checkpoints/latest.pth")
@@ -144,7 +144,7 @@ def main(args):
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), "checkpoints/best.pth")
-            print(f"  → New best model! (val_loss: {val_loss:.4f})")
+            print(f"  → New best model! (valid_loss: {valid_loss:.4f})")
 
     torch.save(model.state_dict(), "checkpoints/final.pth")
     writer.close()

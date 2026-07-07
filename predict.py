@@ -6,8 +6,8 @@ import torchvision.transforms as T
 from PIL import Image, ImageDraw, ImageFont
 
 from config import S, B, C, IMAGE_SIZE, CONF_THRESHOLD, NMS_IOU_THRESH, DATASET_ROOT
-from model import YOLOv1
-from utils import decode_predictions, non_max_suppression, load_class_names, scale_box
+from yolov1.model import YOLOv1
+from yolov1.utils import decode_predictions, non_max_suppression, load_class_names, scale_box
 
 
 def preprocess_image(image_path):
@@ -64,7 +64,7 @@ def main(args):
     num_classes = len(class_names)
 
     # Initialize model architecture and load trained weights
-    model = YOLOv1(num_classes=num_classes).to(device)
+    model = YOLOv1().to(device)
     model.load_state_dict(torch.load(args.weights, map_location=device))
     model.eval()
 

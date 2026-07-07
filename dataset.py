@@ -16,7 +16,7 @@ class YOLOv1Dataset(Dataset):
         self.augment = augment
 
         # Filter specifically for image extensions to prevent crashes
-        img_extensions = {".jpg", ".jpeg", ".png", ".jpg", ".jpeg", ".png"}
+        img_extensions = {".jpg", ".jpeg", ".png"}
 
         self.img_files = [
             os.path.join(self.img_dir, file) for file in os.listdir(self.img_dir)

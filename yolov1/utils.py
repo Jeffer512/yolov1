@@ -11,7 +11,7 @@ def load_class_names(data_yaml_path):
     return data.get("names", [])
 
 
-def scale_box(detections, height, width):
+def scale_box(bbox, height, width):
     """Scales a single normalized bounding box [x1, y1, x2, y2] to pixel values."""
     x1, y1, x2, y2 = bbox
     return [
@@ -24,9 +24,15 @@ def scale_box(detections, height, width):
 
 
 def decode_predictions(pred_tensor, conf_threshold=CONF_THRESHOLD):
-    """Converts model grid predictions (batch, channels, S, S) into bounding boxes.
+    """Converts model grid predictions into bounding boxes.
     
     Transforms raw logits and offsets into absolute normalized coordinates (x1, y1, x2, y2).
+    
+    Args:
+        pred_tensor (Tensor): Model predictions (batch, channels, S, S)
+
+    Returns:
+        list: List with detections for each image in the batch
     """ 
     batch_detections = []
     batch_size = pred_tensor.size(0)
@@ -45,13 +51,11 @@ def decode_predictions(pred_tensor, conf_threshold=CONF_THRESHOLD):
 
                 raw_x = torch.sigmoid(pred[1, row, col]).item()
                 raw_y = torch.sigmoid(pred[2, row, col]).item()
-                raw_w = torch.exp(pred[3, row, col]).item()
-                raw_h = torch.exp(pred[4, row, col]).item()
+                w = torch.exp(pred[3, row, col]).item()
+                h = torch.exp(pred[4, row, col]).item()
 
                 cx = (raw_x + col) / S
                 cy = (raw_y + row) / S        
-                w = raw_w
-                h = raw_h
 
                 x1 = cx - w / 2
                 y1 = cy - h / 2
