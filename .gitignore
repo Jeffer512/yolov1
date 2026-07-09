@@ -1,7 +1,7 @@
 # Ignore local datasets
 dataset/
 data/
-Self-Driving-Car-3
+Self-Driving-Car-3/
 
 # Ignore Python cache files
 __pycache__/
