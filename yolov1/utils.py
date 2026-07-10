@@ -1,6 +1,6 @@
 import torch
 # Note: matplotlib and numpy are lazily imported inside plot_predictions to keep production light
-from config import S, CONF_THRESHOLD, NMS_IOU_THRESH
+from config import CONF_THRESHOLD, NMS_IOU_THRESH
 
 
 def load_class_names(data_yaml_path):
@@ -20,7 +20,6 @@ def scale_box(bbox, height, width):
         x2 * width,
         y2 * height,
     ]
-    return detections
 
 
 def decode_predictions(pred_tensor, conf_threshold=CONF_THRESHOLD):

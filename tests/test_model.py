@@ -1,21 +1,21 @@
-# tests/test_model.py
 import torch
 from yolov1.model import YOLOv1
-from config import S, B, C
+from config import IMAGE_HEIGHT, IMAGE_WIDTH, S_H, S_W, B, C
 
 
 def test_model_output_shape():
     """Verify the model output tensor has the correct grid dimensions and channel depth."""
-    # Instantiate without pre-trained weights to keep test execution fast
     model = YOLOv1(pretrained=False)
     
-    # Simulate a batch of 2 images
-    dummy_input = torch.randn(2, 3, 224, 224)
+    #  FIX: Simulate a batch using your actual configured image dimensions!
+    dummy_input = torch.randn(2, 3, IMAGE_HEIGHT, IMAGE_WIDTH) # (2, 3, 288, 448)
     output = model(dummy_input)
     
-    # Expected channels: B * 5 + C (for B=1, C=11, this is 16 channels)
+    # Expected channels: B * 5 + C = 16
     expected_channels = B * 5 + C
-    assert output.shape == (2, expected_channels, S, S)
+    
+    #  FIX: Assert shape matches the asymmetric grid layout!
+    assert output.shape == (2, expected_channels, S_H, S_W) # (2, 16, 9, 14)
 
 
 def test_freeze_backbone():
