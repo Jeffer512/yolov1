@@ -28,10 +28,13 @@ class YOLOv1(nn.Module):
 
         # Custom convolutional projection head
         self.head = nn.Sequential(
-            nn.Conv2d(2048, 512, kernel_size=3, padding=1),     
-            nn.BatchNorm2d(512),   
+            nn.Conv2d(2048, 1024, kernel_size=3, padding=1),     
+            nn.BatchNorm2d(1024),   
             nn.LeakyReLU(0.1),
-            nn.Conv2d(512, 256, kernel_size=3, padding=1),
+            nn.Conv2d(1024, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(0.1),
+            nn.Conv2d(512, 256, kernel_size=1),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.1),
             nn.Conv2d(256, self.output_depth, kernel_size=1),
