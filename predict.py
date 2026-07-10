@@ -3,9 +3,9 @@ import os
 import argparse
 import torch
 import torchvision.transforms as T
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
-from config import S, B, C, IMAGE_SIZE, CONF_THRESHOLD, NMS_IOU_THRESH, DATASET_ROOT
+from config import IMAGE_SIZE, CONF_THRESHOLD, NMS_IOU_THRESH, DATASET_ROOT
 from yolov1.model import YOLOv1
 from yolov1.utils import decode_predictions, non_max_suppression, load_class_names, scale_box
 
@@ -61,14 +61,13 @@ def main(args):
     # Read class names
     data_yaml_path = os.path.join(DATASET_ROOT, "data.yaml")
     class_names = load_class_names(data_yaml_path)
-    num_classes = len(class_names)
 
     # Initialize model architecture and load trained weights
     model = YOLOv1().to(device)
     model.load_state_dict(torch.load(args.weights, map_location=device))
     model.eval()
 
-    input_tensor, orig_w, orig_h, orig_image = preprocess_image(args.image)
+    input_tensor, _, _, orig_image = preprocess_image(args.image)
     input_tensor = input_tensor.to(device)
 
     with torch.no_grad():

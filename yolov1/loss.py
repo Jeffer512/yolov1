@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from config import S, LAMBDA_COORD, LAMBDA_NOOBJ
+from config import LAMBDA_COORD, LAMBDA_NOOBJ
 from yolov1.utils import iou_vectorized
 
 

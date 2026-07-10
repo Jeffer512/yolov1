@@ -3,7 +3,7 @@ import torch
 import torchvision.transforms as T
 from torch.utils.data import Dataset
 from PIL import Image
-from config import S_H, S_W, B, C, IMAGE_SIZE
+from config import S_H, S_W, B, C
   
 class YOLOv1Dataset(Dataset):
     def __init__(self, data_dir, split, normalize=True, augment=True):

@@ -1,13 +1,12 @@
 import os
 import argparse
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from config import (
-    S, B, C, IMAGE_SIZE, LR, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT, CHECKPOINT_DIR, LOG_DIR
+    C, LR, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT, CHECKPOINT_DIR, LOG_DIR
 )
 from dataset import YOLOv1Dataset
 from yolov1.model import YOLOv1
