@@ -17,8 +17,8 @@ class YOLOv1Loss(nn.Module):
         """Computes the total loss between model predictions and targets.
 
         Args:
-            predictions (Tensor): Raw model outputs of shape (B, B*5 + C, S, S).
-            targets (Tensor): Ground truth target tensors of shape (B, S, S, B*5 + C).
+            predictions (Tensor): Raw model outputs of shape (B, B*5 + C, S_H, S_W).
+            targets (Tensor): Ground truth target tensors of shape (B, S_H, S_W, B*5 + C).
 
         Returns:
             Tensor: Scalar normalized total loss.
@@ -26,6 +26,8 @@ class YOLOv1Loss(nn.Module):
         # Permute predictions to channel-last format (B, S, S, depth) to match target layout
         pred = predictions.permute(0, 2, 3, 1).contiguous()
         target = targets.contiguous()
+
+        _, S_H, S_W, _ = pred.shape
 
         # Identify cells containing objects (p_c > 0)
         obj_mask = target[..., 0] > 0
@@ -62,8 +64,8 @@ class YOLOv1Loss(nn.Module):
 
         device = pred.device
         grid_y, grid_x = torch.meshgrid(
-            torch.arange(S, device=device),
-            torch.arange(S, device=device),
+            torch.arange(S_H, device=device),
+            torch.arange(S_W, device=device),
             indexing='ij',
         )
 
@@ -74,11 +76,15 @@ class YOLOv1Loss(nn.Module):
         # Stack indices along a new 4th dimension to match pred_xy shape: (batch_size, S, S, 2)
         grid_xy = torch.stack([grid_x, grid_y], dim=-1)
 
-        # Convert center coordinates from cell-relative to absolute image-relative
-        pred_abs_xy = (pred_xy + grid_xy.float()) / S
-        target_abs_xy = (target_xy + grid_xy.float()) / S
+        # Construct a 2-element division scale tensor [S_W, S_H] 
+        # to perform asymmetric coordinate normalization in a single operation
+        S_tensor = torch.tensor([S_W, S_H], device=device).view(1, 1, 1, 2)
 
-        # Concatenate absolute coordinates (batch_size, S, S, 4)
+        # Convert center coordinates from cell-relative to absolute image-relative
+        pred_abs_xy = (pred_xy + grid_xy.float()) / S_tensor
+        target_abs_xy = (target_xy + grid_xy.float()) / S_tensor
+
+        # Concatenate absolute coordinates (batch_size, S_H, S_W, 4)
         pred_box_abs = torch.cat([pred_abs_xy, pred_wh], dim=-1)
         target_box_abs = torch.cat([target_abs_xy, target_wh], dim=-1)
 

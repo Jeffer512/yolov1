@@ -37,12 +37,14 @@ def decode_predictions(pred_tensor, conf_threshold=CONF_THRESHOLD):
     batch_detections = []
     batch_size = pred_tensor.size(0)
 
+    batch_size, _, S_H, S_W = pred_tensor.shape
+
     for b in range(batch_size):
         detections = []
         pred = pred_tensor[b] 
 
-        for row in range(S):
-            for col in range(S):
+        for row in range(S_H):
+            for col in range(S_W):
                 raw_conf = pred[0, row, col]    
                 confidence = torch.sigmoid(raw_conf).item()
 
@@ -54,8 +56,8 @@ def decode_predictions(pred_tensor, conf_threshold=CONF_THRESHOLD):
                 w = torch.exp(pred[3, row, col]).item()
                 h = torch.exp(pred[4, row, col]).item()
 
-                cx = (raw_x + col) / S
-                cy = (raw_y + row) / S        
+                cx = (raw_x + col) / S_H
+                cy = (raw_y + row) / S_W      
 
                 x1 = cx - w / 2
                 y1 = cy - h / 2

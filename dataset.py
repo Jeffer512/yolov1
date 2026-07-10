@@ -3,13 +3,14 @@ import torch
 import torchvision.transforms as T
 from torch.utils.data import Dataset
 from PIL import Image
-from config import S, B, C, IMAGE_SIZE
+from config import S_H, S_W, B, C, IMAGE_SIZE
   
 class YOLOv1Dataset(Dataset):
     def __init__(self, data_dir, split, normalize=True, augment=True):
         self.img_dir = os.path.join(data_dir, split, "images")
         self.label_dir = os.path.join(data_dir, split, "labels")
-        self.S = S
+        self.S_H = S_H
+        self.S_W = S_W
         self.B = B
         self.C = C
         self.normalize = normalize
@@ -43,7 +44,7 @@ class YOLOv1Dataset(Dataset):
                     boxes.append([class_id, x, y, w, h])
 
         # Define the transforms pipeline in the correct logical order
-        transforms_list = [T.Resize((IMAGE_SIZE, IMAGE_SIZE))]
+        transforms_list = []
         
         if self.augment:
             transforms_list.append(T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1))
@@ -57,20 +58,20 @@ class YOLOv1Dataset(Dataset):
         
         image = transforms(image)
         
-        # Build the YOLO Target Tensor (S, S, B*5 + C)
-        target = torch.zeros((self.S, self.S, self.B * 5 + self.C))
+        # Build the YOLO Target Tensor (S_H, S_W, B*5 + C)
+        target = torch.zeros((self.S_h, self.S_w, self.B * 5 + self.C))
 
         for box in boxes:
             class_id, x, y, w, h = box
             class_id = int(class_id)
 
-            col = int(x * self.S)
-            row = int(y * self.S)
+            col = int(x * self.S_W)
+            row = int(y * self.S_H)
 
             if target[row, col, 0] == 0:
                 target[row, col, 0] = 1.0
-                x_cell = (x * self.S) - col
-                y_cell = (y * self.S) - row
+                x_cell = (x * self.S_W) - col
+                y_cell = (y * self.S_H) - row
                 target[row, col, 1:5] = torch.tensor([x_cell, y_cell, w, h])
                 target[row, col, 5 + class_id] = 1.0
 

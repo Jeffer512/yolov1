@@ -1,6 +1,6 @@
 # --- Grid & Detection Parameters ---
-S = 7                      # Grid size (resulting in a 7x7 grid)
-B = 1                      # Number of bounding box predictions per cell
+S_W = 14                   # Grid cells horizontally (IMAGE_WIDTH / 32)
+S_H = 9                    # Grid cells vertically (IMAGE_HEIGHT / 32)
 C = 11                     # Number of classes 
 
 IMAGE_SIZE = 224           # (224x224)
