@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from config import (
-    S, B, C, IMAGE_SIZE, LR, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT,
+    S, B, C, IMAGE_SIZE, LR, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT, CHECKPOINT_DIR, LOG_DIR
 )
 from dataset import YOLOv1Dataset
 from yolov1.model import YOLOv1
@@ -106,9 +106,9 @@ def main(args):
         best_valid_loss = checkpoint.get("best_valid_loss", float("inf"))
         print(f"Resumed from {args.resume} (epoch {start_epoch - 1})")
 
-    os.makedirs("checkpoints", exist_ok=True)
+    os.makedirs(CHECKPOINT_DIR, exist_ok=True)
     
-    writer = SummaryWriter(log_dir="runs/yolov1")
+    writer = SummaryWriter(log_dir=LOG_DIR)
     # Main training loop
     for epoch in range(start_epoch, EPOCHS):
         # Stage 2: Fine-tune only the last residual block of the ResNet backbone
@@ -139,14 +139,14 @@ def main(args):
             "valid_loss": valid_loss,
             "best_valid_loss": best_valid_loss,
         }
-        save_checkpoint(checkpoint_state, "checkpoints/latest.pth")
+        save_checkpoint(checkpoint_state, os.path.join(CHECKPOINT_DIR, "latest.pth"))
 
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), "checkpoints/best.pth")
+            torch.save(model.state_dict(), os.path.join(CHECKPOINT_DIR, "best.pth"))
             print(f"  → New best model! (valid_loss: {valid_loss:.4f})")
 
-    torch.save(model.state_dict(), "checkpoints/final.pth")
+    torch.save(model.state_dict(), os.path.join(CHECKPOINT_DIR, "final.pth"))
     writer.close()
     print("Training complete.")
 

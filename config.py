@@ -23,4 +23,8 @@ NUM_WORKERS = 2            # Number of CPU background processes loading data
 PIN_MEMORY = True          # Pin loaded tensors to CPU RAM for faster GPU transfer
 
 # --- Paths ---
-DATASET_ROOT = "Self-Driving-Car-3"  
+DATASET_ROOT = "dataset/"  
+
+# Save checkpoints directly to permanent Google Drive
+CHECKPOINT_DIR = "/content/drive/MyDrive/yolov1/checkpoints"
+LOG_DIR = "/content/drive/MyDrive/yolov1/runs"
