@@ -131,7 +131,9 @@ def main(args):
         start_epoch = checkpoint["epoch"] + 1
         best_valid_loss = checkpoint.get("best_valid_loss", float("inf"))
         print(f"Resumed from {args.resume} (epoch {start_epoch - 1})")
-
+    elif args.weights and os.path.exists(args.weights):
+        model.load_state_dict(torch.load(args.weights, map_location=device))
+        
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)
     
     writer = SummaryWriter(log_dir=LOG_DIR)
@@ -180,5 +182,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
+    parser.add_argument("--weights", type=str, default=None, help="Path to weights to initialize (ignored if --resume passed)")
     args = parser.parse_args()
     main(args)
