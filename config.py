@@ -4,8 +4,6 @@ S_H = 9                    # Grid cells vertically (IMAGE_HEIGHT / 32)
 C = 11                     # Number of classes 
 B = 1
 
-IMAGE_SIZE = 224           
-
 IMAGE_HEIGHT=288
 IMAGE_WIDTH=448
 # --- YOLO Loss Scaling Weights ---

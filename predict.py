@@ -5,25 +5,59 @@ import torch
 import torchvision.transforms as T
 from PIL import Image, ImageDraw
 
-from config import IMAGE_SIZE, CONF_THRESHOLD, NMS_IOU_THRESH, DATASET_ROOT
+from config import CONF_THRESHOLD, NMS_IOU_THRESH, DATASET_ROOT
 from yolov1.model import YOLOv1
 from yolov1.utils import decode_predictions, non_max_suppression, load_class_names, scale_box
 
 
-def preprocess_image(image_path):
-    """Loads and preprocesses a raw image file for YOLOv1 inference."""
+def preprocess_image(image_path, target_scale=448):
+    """Loads, resizes, and pads an image dynamically to target_scale (longest dimension), preserving aspect ratio."""
     image = Image.open(image_path).convert("RGB")
     orig_w, orig_h = image.size
+
+    # Scale image proportionally so the longest side is exactly ``IMAGE_SIZE``
+    r = target_scale / max(orig_w, orig_h)
+    unpadded_w = round(int(orig_w * r))
+    unpadded_h = round(int(orig_h * r))
+
+    # Find the nearest larger multiple of 32 for both dimensions (stride-32 alignment)
+    padded_w = int(math.ceil(unpadded_w / 32.0) * 32)
+    padded_h = int(math.ceil(unpadded_h / 32.0) * 32)
+
+    # Calculate the padding required
+    pad_w = padded_w - unpadded_w
+    pad_h = padded_h - unpadded_h
+
+    pad_left = pad_w // 2
+    pad_top = pad_h // 2
+    pad_right = pad_w - pad_left
+    pad_bottom = pad_h - pad_top
+
     transform = T.Compose([
-        T.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+        T.Resize((unpadded_h, unpadded_w)),
+        T.Pad(padding=(pad_left, pad_top, pad_right, pad_bottom), fill=0),
         T.ToTensor(),
         T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
+    
     input_tensor = transform(image).unsqueeze(0)
-    return input_tensor, orig_w, orig_h, image
+
+    # Package the metadata (used to reverse padding and scaling during postprocessing)
+    metadata = {
+        "orig_w": orig_w,
+        "orig_h": orig_h,
+        "unpadded_w": unpadded_w,
+        "unpadded_h": unpadded_h,
+        "padded_w": padded_w,
+        "padded_h": padded_h,
+        "pad_left": pad_left,
+        "pad_top": pad_top
+    }
+    
+    return input_tensor, metadata, image
 
 
-def draw_boxes(image, detections, class_names):
+def draw_boxes(image, detections, class_names, metadata):
     """Draws bounding boxes on a PIL image.
 
     Args:
@@ -38,11 +72,10 @@ def draw_boxes(image, detections, class_names):
     colors = [
         "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF",
     ]
-    img_w, img_h = image.size
     
     for det in detections:
         # Scale coordinates in [0,1] range to pixel values
-        x1, y1, x2, y2 = scale_box(det["bbox"], img_h, img_w)
+        x1, y1, x2, y2 = scale_box(det["bbox"], metadata)
         class_id = det["class_id"]
         conf = det["confidence"]
         color = colors[class_id % len(colors)]
@@ -67,7 +100,7 @@ def main(args):
     model.load_state_dict(torch.load(args.weights, map_location=device))
     model.eval()
 
-    input_tensor, _, _, orig_image = preprocess_image(args.image)
+    input_tensor, metadata, orig_image = preprocess_image(args.image, args.image_size)
     input_tensor = input_tensor.to(device)
 
     with torch.no_grad():
@@ -82,7 +115,7 @@ def main(args):
         print(f"  {class_names[det['class_id']]}: {det['confidence']:.2f} at {det['bbox']}")
 
     # Generate and save final visualized output
-    result_image = draw_boxes(orig_image.copy(), detections[0], class_names)
+    result_image = draw_boxes(orig_image.copy(), detections[0], class_names, metadata) 
     output_path = args.output or f"output_{os.path.basename(args.image)}"
     result_image.save(output_path)
     print(f"Result saved to {output_path}")
@@ -95,5 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("--confidence", type=float, default=CONF_THRESHOLD, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=NMS_IOU_THRESH, help="NMS IoU threshold")
     parser.add_argument("--output", type=str, default=None, help="Output image path")
+    parser.add_argument("--image_size", type=int, default=448, help="Target max scale for inference")
+
     args = parser.parse_args()
     main(args)

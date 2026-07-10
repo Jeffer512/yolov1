@@ -11,14 +11,43 @@ def load_class_names(data_yaml_path):
     return data.get("names", [])
 
 
-def scale_box(bbox, height, width):
-    """Scales a single normalized bounding box [x1, y1, x2, y2] to pixel values."""
+def scale_box(bbox, metadata):
+    """Reverses the dynamic scaling and padding to restore coordinates to original dimensions."""
     x1, y1, x2, y2 = bbox
+    
+    orig_w = metadata["orig_w"]
+    orig_h = metadata["orig_h"]
+    unpadded_w = metadata["unpadded_w"]
+    unpadded_h = metadata["unpadded_h"]
+    padded_w = metadata["padded_w"]
+    padded_h = metadata["padded_h"]
+    pad_left = metadata["pad_left"]
+    pad_top = metadata["pad_top"]
+    
+    # Reverse the padding shift
+    x1_pixel = (x1 * padded_w) - pad_left
+    y1_pixel = (y1 * padded_h) - pad_top
+    x2_pixel = (x2 * padded_w) - pad_left
+    y2_pixel = (y2 * padded_h) - pad_top
+    
+    # Normalize relative to the UNPADDED dimensions
+    x1_unpadded = x1_pixel / unpadded_w
+    y1_unpadded = y1_pixel / unpadded_h
+    x2_unpadded = x2_pixel / unpadded_w
+    y2_unpadded = y2_pixel / unpadded_h
+    
+    # Clamp values strictly within [0.0, 1.0] to handle precision errors
+    x1_unpadded = max(0.0, min(1.0, x1_unpadded))
+    y1_unpadded = max(0.0, min(1.0, y1_unpadded))
+    x2_unpadded = max(0.0, min(1.0, x2_unpadded))
+    y2_unpadded = max(0.0, min(1.0, y2_unpadded))
+    
+    # Scale to original raw image pixel dimensions
     return [
-        x1 * width,
-        y1 * height,
-        x2 * width,
-        y2 * height,
+        x1_unpadded * orig_w,
+        y1_unpadded * orig_h,
+        x2_unpadded * orig_w,
+        y2_unpadded * orig_h,
     ]
 
 
