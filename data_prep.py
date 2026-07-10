@@ -165,6 +165,11 @@ def preprocess_dataset(src_dir, dest_dir):
                 img_count += 1
                 
         print(f"[{split}] Processed {img_count} unique images. Skipped {skipped_duplicates} duplicates.")
+
+    # Move the dataset configuration YAML to the preprocessed directory
+    if (src_path / "data.yaml").exists():
+        shutil.move(str(src_path / "data.yaml"), str(dest_path / "data.yaml"))
+        
     print("Offline preprocessing complete.")
 
 
