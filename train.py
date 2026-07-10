@@ -4,9 +4,11 @@ import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 from config import (
-    C, LR, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT, CHECKPOINT_DIR, LOG_DIR
+    IMAGE_HEIGHT, IMAGE_WIDTH, C, LR, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT, CHECKPOINT_DIR, LOG_DIR
 )
 from dataset import YOLOv1Dataset
 from yolov1.model import YOLOv1
@@ -74,10 +76,35 @@ def main(args):
     if num_classes != C:
         print(f"Warning: config has C={C} but dataset has {num_classes} classes")
 
-    # Instantiate datasets and dataloaders
-    train_set = YOLOv1Dataset(DATASET_ROOT, "train")
+    train_transforms = A.Compose([
+        A.HorizontalFlip(p=0.5),
+        A.Affine(translate_percent=0.05, scale=(0.90, 1.10), rotate=5, border_mode=0, p=0.4),
+        A.RandomSizedBBoxSafeCrop(height=IMAGE_HEIGHT, width=IMAGE_WIDTH, erosion_rate=0.0, p=0.3),
+        A.ColorJitter(brightness=0.25, contrast=0.25, saturation=0.25, hue=0.05, p=0.4),
+        A.GaussianBlur(blur_limit=(3, 5), p=0.2),
+        A.GaussNoise(std_range=(0.01, 0.05), p=0.2),
+        A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+        ToTensorV2()
+    ], bbox_params=A.BboxParams(
+        format="yolo",
+        label_fields=["class_labels"],
+        min_visibility=0.3,
+        clip=True
+    ))
 
-    valid_set = YOLOv1Dataset(DATASET_ROOT, "valid", augment=False)
+    valid_transforms = A.Compose([
+        A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+        ToTensorV2()
+    ], bbox_params=A.BboxParams(
+        format="yolo",
+        label_fields=["class_labels"],
+        clip=True
+    ))
+
+    # Instantiate datasets and dataloaders
+    train_set = YOLOv1Dataset(DATASET_ROOT, "train", transforms=train_transforms)
+
+    valid_set = YOLOv1Dataset(DATASET_ROOT, "valid", transforms=valid_transforms)
 
     train_loader = DataLoader(
         train_set, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY
