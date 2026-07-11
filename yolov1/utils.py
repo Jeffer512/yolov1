@@ -84,8 +84,8 @@ def decode_predictions(pred_tensor, conf_threshold=CONF_THRESHOLD):
                 w = torch.exp(pred[3, row, col]).item()
                 h = torch.exp(pred[4, row, col]).item()
 
-                cx = (raw_x + col) / S_H
-                cy = (raw_y + row) / S_W      
+                cx = (raw_x + col) / S_W
+                cy = (raw_y + row) / S_H    
 
                 x1 = cx - w / 2
                 y1 = cy - h / 2
