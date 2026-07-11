@@ -4,11 +4,11 @@ import shutil
 from pathlib import Path
 
 # Symmetrical 4px vertical padding parameters (1920x1200 -> 448x280 -> 448x288)
-WIDTH = 448
-UNPADDED_H = 280
-PADDED_H = 288
-TOP_PAD_PX = 4
-BOTTOM_PAD_PX = 4
+WIDTH = 512
+UNPADDED_H = 320
+PADDED_H = 320
+TOP_PAD_PX = 0
+BOTTOM_PAD_PX = 0
 
 def download_dataset(root_dir, api_key):
     """Downloads the raw dataset from the Roboflow platform.

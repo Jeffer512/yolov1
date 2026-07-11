@@ -1,16 +1,16 @@
-# predict.py
 import os
+import math
 import argparse
 import torch
 import torchvision.transforms as T
 from PIL import Image, ImageDraw
 
-from config import CONF_THRESHOLD, NMS_IOU_THRESH, DATASET_ROOT
+from config import IMAGE_WIDTH, CONF_THRESHOLD, NMS_IOU_THRESH, DATASET_ROOT
 from yolov1.model import YOLOv1
 from yolov1.utils import decode_predictions, non_max_suppression, load_class_names, scale_box
 
 
-def preprocess_image(image_path, target_scale=448):
+def preprocess_image(image_path, target_scale=IMAGE_WIDTH):
     """Loads, resizes, and pads an image dynamically to target_scale (longest dimension), preserving aspect ratio."""
     image = Image.open(image_path).convert("RGB")
     orig_w, orig_h = image.size
