@@ -8,7 +8,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 from config import (
-    IMAGE_HEIGHT, IMAGE_WIDTH, C, LR, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT, CHECKPOINT_DIR, LOG_DIR
+    IMAGE_HEIGHT, IMAGE_WIDTH, C, LR, WEIGHT_DECAY, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT, CHECKPOINT_DIR, LOG_DIR
 )
 from dataset import YOLOv1Dataset
 from yolov1.model import YOLOv1
@@ -119,34 +119,47 @@ def main(args):
 
     loss_fn = YOLOv1Loss()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
-
-    start_epoch = 0
+    start_epoch = 1
     best_valid_loss = float("inf")
+    checkpoint = None
 
+    # Load checkpoint state if a valid path is provided
     if args.resume and os.path.exists(args.resume):
         checkpoint = torch.load(args.resume, map_location=device)
         model.load_state_dict(checkpoint["model_state_dict"])
-        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         start_epoch = checkpoint["epoch"] + 1
         best_valid_loss = checkpoint.get("best_valid_loss", float("inf"))
         print(f"Resumed from {args.resume} (epoch {start_epoch - 1})")
     elif args.weights and os.path.exists(args.weights):
         model.load_state_dict(torch.load(args.weights, map_location=device))
         
+    # Align optimizer parameter groups with the checkpoint structure before loading
+    if (start_epoch > 20):
+        model.freeze_backbone(False)
+        optimizer = torch.optim.AdamW([
+            {"params": model.head.parameters(), "lr": LR},
+            {"params": model.backbone[-1].parameters(), "lr": 1e-6}
+        ], weight_decay=WEIGHT_DECAY)
+    else:
+        optimizer = torch.optim.AdamW(model.head.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+
+    if checkpoint is not None and "optimizer_state_dict" in checkpoint:
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)
     
     writer = SummaryWriter(log_dir=LOG_DIR)
+
     # Main training loop
-    for epoch in range(start_epoch, EPOCHS):
-        # Stage 2: Fine-tune only the last residual block of the ResNet backbone
-        if epoch == 15:
+    for epoch in range(start_epoch, EPOCHS + 1):
+        # Stage 2: Unfreeze last block of the backbone and append it to the optimizer for fine-tuning
+        if epoch == 20:
             print("\n=== Stage 2: Unfreezing backbone for fine-tuning ===")
             model.freeze_backbone(False) 
-            optimizer = torch.optim.Adam([
-                {"params": model.backbone[-1].parameters(), "lr": 1e-6}, 
-                {"params": model.head.parameters(), "lr": LR}
-            ])
+            optimizer.add_param_group({
+                "params": model.backbone[-1].parameters(), 
+                "lr": 1e-6
+            })
 
         train_loss = train_one_epoch(model, train_loader, loss_fn, optimizer, device, epoch)
         valid_loss = validate(model, valid_loader, loss_fn, device)
