@@ -18,6 +18,7 @@ NMS_IOU_THRESH = 0.4       # IoU threshold for Non-Maximum Suppression (NMS)
 
 # --- Training Hyperparameters ---
 LR = 1e-4   
+BACKBONE_LR = 1e-6
 WEIGHT_DECAY=1e-4
 EPOCHS = 75                
 BATCH_SIZE = 64            

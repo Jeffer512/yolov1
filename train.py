@@ -8,7 +8,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 from config import (
-    IMAGE_HEIGHT, IMAGE_WIDTH, C, LR, WEIGHT_DECAY, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT, CHECKPOINT_DIR, LOG_DIR
+    IMAGE_HEIGHT, IMAGE_WIDTH, C, LR, BACKBONE_LR, WEIGHT_DECAY, EPOCHS, BATCH_SIZE, NUM_WORKERS, PIN_MEMORY, DATASET_ROOT, CHECKPOINT_DIR, LOG_DIR
 )
 from dataset import YOLOv1Dataset
 from yolov1.model import YOLOv1
@@ -146,6 +146,10 @@ def main(args):
     if checkpoint is not None and "optimizer_state_dict" in checkpoint:
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
+    optimizer.param_groups[0]['lr'] = LR
+    if len(optimizer.param_groups) > 1:
+        optimizer.param_groups[1]['lr'] = BACKBONE_LR
+
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)
     
     writer = SummaryWriter(log_dir=LOG_DIR)
@@ -158,7 +162,7 @@ def main(args):
             model.freeze_backbone(False) 
             optimizer.add_param_group({
                 "params": model.backbone[-1].parameters(), 
-                "lr": 1e-6
+                "lr": BACKBONE_LR
             })
 
         train_loss = train_one_epoch(model, train_loader, loss_fn, optimizer, device, epoch)
@@ -171,6 +175,11 @@ def main(args):
 
         print(f"Epoch {epoch:2d}/{EPOCHS}  |  Train Loss: {train_loss:.4f}  |  Val Loss: {valid_loss:.4f}  |  LR: {optimizer.param_groups[0]['lr']:.6f}")
 
+        if valid_loss < best_valid_loss:
+            best_valid_loss = valid_loss
+            torch.save(model.state_dict(), os.path.join(CHECKPOINT_DIR, "best.pth"))
+            print(f"  → New best model! (valid_loss: {valid_loss:.4f})")
+
         # Save latest checkpoint state for recovery
         checkpoint_state = {
             "epoch": epoch,
@@ -181,11 +190,6 @@ def main(args):
             "best_valid_loss": best_valid_loss,
         }
         save_checkpoint(checkpoint_state, os.path.join(CHECKPOINT_DIR, "latest.pth"))
-
-        if valid_loss < best_valid_loss:
-            best_valid_loss = valid_loss
-            torch.save(model.state_dict(), os.path.join(CHECKPOINT_DIR, "best.pth"))
-            print(f"  → New best model! (valid_loss: {valid_loss:.4f})")
 
     torch.save(model.state_dict(), os.path.join(CHECKPOINT_DIR, "final.pth"))
     writer.close()
