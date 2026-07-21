@@ -9,14 +9,14 @@ class YOLOv1(nn.Module):
     Supports selective parameter freezing of the backbone layers to facilitate
     two-stage transfer learning and fine-tuning.
     """
-    def __init__(self, pretrained=True):
+    def __init__(self, num_classes=C, pretrained=True):
         """
         Args:
             pretrained (bool): Whether to load pre-trained ImageNet weights.
         """
         super().__init__()
         self.B = B
-        self.C = C
+        self.C = num_classes
         self.output_depth = B * 5 + C
 
         weights = ResNet50_Weights.DEFAULT if pretrained else None

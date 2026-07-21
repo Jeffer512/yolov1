@@ -13,13 +13,13 @@ class YOLOv1Dataset(Dataset):
     Images must satisfy W = 32*S_W and H = 32*S_H (or be resized via transforms).
     Targets should be in YOLOv5 format.
     """    
-    def __init__(self, data_dir, split, S_H=S_H, S_W=S_W, transforms=None):
+    def __init__(self, data_dir, split, S_H=S_H, S_W=S_W, num_classes=C, transforms=None):
         self.img_dir = os.path.join(data_dir, split, "images")
         self.label_dir = os.path.join(data_dir, split, "labels")
         self.S_H = S_H
         self.S_W = S_W
         self.B = B
-        self.C = C
+        self.C = num_classes
         self.transforms = transforms
 
         # Filter specifically for image extensions to prevent crashes
