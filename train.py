@@ -146,9 +146,8 @@ def main(args):
     if checkpoint is not None and "optimizer_state_dict" in checkpoint:
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
-    optimizer.param_groups[0]['lr'] = LR
-    if len(optimizer.param_groups) > 1:
-        optimizer.param_groups[1]['lr'] = BACKBONE_LR
+    if args.lr is not None:
+        optimizer.param_groups[0]['lr'] = args.lr
 
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)
     
@@ -164,6 +163,10 @@ def main(args):
                 "params": model.backbone[-1].parameters(), 
                 "lr": BACKBONE_LR
             })
+            optimizer.param_groups[0]['lr'] = 1e-5
+            
+        if epoch == 40:
+            optimizer.param_groups[0]['lr'] = 5e-6
 
         train_loss = train_one_epoch(model, train_loader, loss_fn, optimizer, device, epoch)
         valid_loss = validate(model, valid_loader, loss_fn, device)
@@ -200,5 +203,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
     parser.add_argument("--weights", type=str, default=None, help="Path to weights to initialize (ignored if --resume passed)")
+    parser.add_argument("--lr", type=float, default=None, help="Override head learning rate (only used when resuming)")
     args = parser.parse_args()
     main(args)
