@@ -51,13 +51,62 @@ def scale_box(bbox, metadata):
     ]
 
 
+def decode_targets(target_tensor):
+    """Converts a ground-truth target tensor into a list of detections.
+
+    Args:
+        target_tensor (Tensor): Model predictions (S_H, S_W, B * 5 + C)
+
+    Returns:
+        list: List with detections in ``target_tensor``
+    """ 
+    detections = []
+
+    if target_tensor.dim() == 4:
+        target_tensor = target_tensor[0]
+
+    S_H, S_W, _ = target_tensor.shape
+
+    for row in range(S_H):
+        for col in range(S_W):
+            confidence = target_tensor[row, col, 0].item()
+
+            if confidence == 0.0:
+                continue
+
+            x_cell = target_tensor[row, col, 1].item()
+            y_cell = target_tensor[row, col, 2].item()
+            w = target_tensor[row, col, 3].item()
+            h = target_tensor[row, col, 4].item()
+
+            cx = (x_cell + col) / S_W
+            cy = (y_cell + row) / S_H
+
+            x1 = cx - w / 2
+            y1 = cy - h / 2
+            x2 = cx + w / 2
+            y2 = cy + h / 2
+
+            class_probs = target_tensor[row, col, 5:]
+            class_id = int(torch.argmax(class_probs).item())
+
+            detections.append({
+                "bbox": [x1, y1, x2, y2],
+                "confidence": confidence,
+                "class_id": class_id,
+                "class_score": 1.0
+            })
+
+    return detections
+
+
 def decode_predictions(pred_tensor, conf_threshold=CONF_THRESHOLD):
     """Converts model grid predictions into bounding boxes.
     
     Transforms raw logits and offsets into absolute normalized coordinates (x1, y1, x2, y2).
     
     Args:
-        pred_tensor (Tensor): Model predictions (batch, channels, S, S)
+        pred_tensor (Tensor): Model predictions (batch, B * 5 + C, S_H, S_W)
 
     Returns:
         list: List with detections for each image in the batch
