@@ -86,6 +86,11 @@ def decode_predictions(pred_tensor, conf_threshold=CONF_THRESHOLD):
 
                 cx = (raw_x + col) / S_W
                 cy = (raw_y + row) / S_H    
+                
+                # Scale predicted dimensions relative to the baseline training grid coordinates (20x13)
+                # to preserve proportional spatial scaling on arbitrary inference resolutions
+                w = w * (20/S_W)
+                h = h * (13/S_H)
 
                 x1 = cx - w / 2
                 y1 = cy - h / 2
