@@ -128,7 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("--confidence", type=float, default=CONF_THRESHOLD, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=NMS_IOU_THRESH, help="NMS IoU threshold")
     parser.add_argument("--output", type=str, default=None, help="Output image path")
-    parser.add_argument("--image_size", type=int, default=512, help="Target max scale for inference")
+    parser.add_argument("--image_size", type=int, default=640, help="Target max scale for inference")
 
     args = parser.parse_args()
     main(args)

@@ -1,12 +1,12 @@
 # --- Grid & Detection Parameters ---
-S_W = 16                   # Grid cells horizontally (IMAGE_WIDTH / 32)
-S_H = 10                   # Grid cells vertically (IMAGE_HEIGHT / 32)
+S_W = 20                   # Grid cells horizontally (IMAGE_WIDTH / 32)
+S_H = 13                   # Grid cells vertically (IMAGE_HEIGHT / 32)
 C = 11                     # Number of classes 
 B = 1
 
 # --- Input Image Dimensions ---
-IMAGE_HEIGHT=320
-IMAGE_WIDTH=512
+IMAGE_HEIGHT=416
+IMAGE_WIDTH=640
 
 # --- YOLO Loss Scaling Weights ---
 LAMBDA_COORD = 5.0         
