@@ -221,8 +221,13 @@ def plot_predictions(image_tensor, detections, class_names, ax=None):
     colors = plt.cm.tab10(np.linspace(0, 1, len(class_names)))
 
     for det in detections:
+        x1, y1, x2, y2 = det["bbox"]
+
         # Scale coordinates in [0,1] range to pixel values
-        x1, y1, x2, y2 = scale_box(det["bbox"], img_h, img_w)
+        x1 *= img_w
+        x2 *= img_w
+        y1 *= img_h
+        y2 *= img_h
 
         class_id = det["class_id"]
         conf = det["confidence"]
